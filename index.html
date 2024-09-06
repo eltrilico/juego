@@ -1,57 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chat WebRTC</title>
+  <title>Chat WebSocket</title>
 </head>
 <body>
-    <input type="text" id="message" placeholder="Escribe tu mensaje">
-    <button onclick="sendMessage()">Enviar</button>
-    <div id="messages"></div>
+  <input type="text" id="messageInput" placeholder="Escribe tu mensaje">
+  <button id="sendButton">Enviar</button>
+  <div id="messages"></div>
 
-    <script>
-        const peerConnection = new RTCPeerConnection();
-        const messageInput = document.getElementById('message');
-        const messagesDiv = document.getElementById('messages');
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+    const socket = io();
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const messages = document.getElementById('messages');
 
-        // Manejador de eventos para el botón "Enviar"
-        function sendMessage() {
-            const message = messageInput.value;
-            if (message) {
-                const messageChannel = peerConnection.createDataChannel('chat');
-                messageChannel.onopen = () => {
-                    messageChannel.send(message);
-                    messagesDiv.textContent += 'Tú: ' + message + '\n'; // Mostrar mensaje enviado
-                    messageInput.value = '';
-                };
-            }
-        }
+    sendButton.addEventListener('click', () => {
+      const message = messageInput.value;
+      if (message) {
+        socket.emit('message', message);
+        messageInput.value = '';
+      }
+    });
 
-        // Manejador de eventos para recibir mensajes
-        peerConnection.ondatachannel = (event) => {
-            const channel = event.channel;
-            channel.onmessage = (event) => {
-                messagesDiv.textContent += 'Otro usuario: ' + event.data + '\n';
-            };
-        };
-
-        // Crear una oferta y establecer la conexión (simplificado)
-        async function startConnection() {
-            try {
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                // Aquí deberías enviar la oferta al otro usuario
-
-                // Cuando el otro usuario envíe la respuesta, úsala para establecer la conexión
-                peerConnection.onnegotiationneeded = async () => {
-                    // ...
-                };
-            } catch (error) {
-                console.error('Error al iniciar la conexión:', error);
-            }
-        }
-
-        // Iniciar la conexión al cargar la página
-        startConnection();
-    </script>
+    socket.on('message', (msg) => {
+      const p = document.createElement('p');
+      p.textContent = msg;
+      messages.appendChild(p);
+    });
+  </script>
 </body>
 </html>
